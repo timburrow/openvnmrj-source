@@ -1,0 +1,11 @@
+"macro saveannos"
+// Chempacker macro
+is_cpfid:$cp
+if not $cp then return endif
+rm('-f',curexp+'/ROIs/specAnnos'):$dum
+substr(file,'dirname'):$as,$b,$e
+$annos=$as+'/dirinfo/'+$b+'_annos4roi.txt'
+if trace='f1' then
+    rotateannos
+endif
+aspAnno('save',$annos)

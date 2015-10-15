@@ -1,0 +1,32 @@
+"macro getdim"
+" getdim - macro that determines dimensionality of data in experiment "
+
+" Usage: getdim:$dim							"
+"   returns 1 for 1D, 2 for 2D, 3 for 3D, 4 for 4D			"
+
+calcdim
+$nf=1
+exists('nf','parameter'):$e
+if ($e > 0.5) then
+  $nf = nf
+endif
+if (arraydim=1) and ($nf=1) then
+  return(1)
+endif
+$ni=1
+exists('ni','parameter'):$eni
+if $eni>0 then
+  if ni>1 then $ni=$ni+1 endif
+endif
+exists('ni2','parameter'):$eni2
+if $eni2>0 then
+  if ni2>1 then $ni=$ni+1 endif
+endif
+exists('ni3','parameter'):$eni3
+if $eni3>0 then
+  if ni3>1 then $ni=$ni+1 endif
+endif
+if ($nf > 8) then
+  $ni=$ni+1
+endif
+return($ni)

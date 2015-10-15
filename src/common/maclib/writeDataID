@@ -1,0 +1,4 @@
+"macro writeDataID"
+" write dataid on the upper right corner of the plot "
+
+write('plotter',0, 0, dataid)

@@ -1,0 +1,41 @@
+"macro vnmremail"
+"---------------------------------------------------------------"
+"Usage:  vnmremail(<'-m'>,filename,address)			"
+"  Without -m option the file specified by filename		"
+"  	is sent after uuencode.  				"
+"  A directory will be tar'ed and zipped			"
+"  With -m option the file will be cat'ed to the body		"
+"  	of the email						"
+"---------------------------------------------------------------"
+
+$error=1
+if ($# < 2) then
+  $error=0
+endif
+
+if ($1 = '-m') and ($# < 3) then
+  $error=0
+endif
+
+if ($1 = '-m') then
+  if ($2='') or ($3='') then $error=0 endif
+else
+  if ($1='') or ($2='') then $error=0 endif
+endif
+
+if ($error) then
+	$vnmremail=''
+        getbinpath('vnmremail'):$error,$vnmremail
+endif
+
+if ($error=0) then
+  write('error','Usage:  vnmremail(<\'-m\'>,filename,address)')
+  return
+endif
+
+if ($# = 3) then
+  shell('('+$vnmremail+' '+$1+' "'+$2+'" "'+$3+'")&'):$dum
+elseif ($# = 2) then
+  shell('('+$vnmremail+' "'+$1+'" "'+$2+'")&'):$dum
+endif
+
