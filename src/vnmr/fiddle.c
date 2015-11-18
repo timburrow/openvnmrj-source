@@ -1,17 +1,25 @@
-/*
- * Copyright (C) 2015  University of Oregon
- *
- * You may distribute under the terms of either the GNU General Public
- * License or the Apache License, as specified in the LICENSE file.
- *
- * For more information, see the LICENSE file.
- */
+/*      Copyright 2009 Varian, Inc. and The University of Manchester    */
 
 /****************************************************************************
 * fiddle   perform reference deconvolution                                  *
 *****************************************************************************/
 
-/*	VERSION Manchester VNMRJ 2.2C 					*/
+
+/*
+ * Varian Inc. All Rights Reserved.
+ * This software contains proprietary and confidential
+ * information of Varian Inc. and its contributors.
+ * Use, disclosure and reproduction is prohibited without
+ * prior consent.
+ */
+
+/*	VERSION Manchester VNMRJ 4.2 from DI 2014.10.07 from 2.2C	*/
+/*	GAM 27x15 Add endian conversion for readincf 			*/
+/*	GAM 27x15 Neaten up: pad correction function with zeroes	*/
+/*	GAM 27x15 Neaten up: correct number of points to correct	*/
+/*	GAM 27x15 Neaten up: only write out filenames if verbose	*/
+/*	GAM 27x15 Neaten up: don't create reference or calculate	*/
+/*		  correction function if reading in latter		*/
 /*	Version for Linux corrected by Dan Iverson 6i09			*/
 /*	Split lines rejoined 7i09					*/
 /*	Correct phasfile to phasefile  1ix99  GAM/PBC			*/
@@ -298,7 +306,7 @@ CMPLX_DC);
 			/* phase correct spectrum */
 			finalph=0.0;
 			rotate2(inp,np0/2,lp,rp);
-			if (aphflg)
+/* GAM 27x15 */		if ((aphflg)&&(!readcfflg))
 			{
 				faph(inp,leftpos,rightpos,&finalph);
 				rotate2(inp,np0/2,0.0,finalph);
@@ -338,7 +346,8 @@ CMPLX_DC);
 			
 	fft(data2,fn0/2,pwr,0,COMPLEX,COMPLEX,1.0,FTNORM/ntval,np0/2);
 			}
-
+/* GAM 27x15 */ 	if (!readcfflg)
+			{
 			if (makereffg) makeideal();
 
 			/* need to weight data3 to create ideal fid */
@@ -347,7 +356,7 @@ CMPLX_DC);
 				disp_status("WT ");
 				weightfid(wtfunc,data3,np0w/2,FALSE,COMPLEX);
 			}
-
+/* GAM 27x15 */		}
 			if (stopflag<1||stopflag>3)
 			{
 				/* DEBUGGING ONLY
@@ -358,6 +367,8 @@ original fid %f \n",
 original fid %f \n",
 				      data1[1]);
 				*/
+/* GAM 27x15 */ 		if (!readcfflg) 
+				{
 				/* divide (3) by (2) */
 				disp_status("DIV ");
 				for (i=0;i<npi;i+=2)
@@ -371,7 +382,13 @@ original fid %f \n",
 					data2[i+1]=(b*c-a*d)/denom;
 				}
 
+/* GAM 27x15 */			for (i=npi;i<fn0;i+=1)
+/* GAM 27x15 */                 {
+/* GAM 27x15 */                        data2[i]=0.0;
+/* GAM 27x15 */			}
+
 				if (writecfflg) writeoutcf();
+/* GAM 27x15 */			}
 				if (readcfflg) readincf();
 
 				/* and multiply by (1) */
@@ -858,7 +875,7 @@ static int i_fiddle(int argc, char *argv[])
 						return(ERROR);
 					}
 				}
-				Wscrprintf("Writing correction function out; destination file: %s\n",writecfname);
+/* GAM 27x15 */			if (verbose) Wscrprintf("Writing correction function out; destination file: %s\n",writecfname);
 			}
 			else if (equal(argv[i],readcf))
 			{
@@ -890,7 +907,7 @@ static int i_fiddle(int argc, char *argv[])
 					return(ERROR);
 				}
 
-				Wscrprintf("Reading correction function in; source file: %s\n",readcfname);
+/* GAM 27x15 */                 if (verbose) Wscrprintf("Reading correction function in; source file: %s\n",readcfname);
 			}
 			else if (equal(argv[i],noaph))
 			{
@@ -946,7 +963,7 @@ static int i_fiddle(int argc, char *argv[])
 	if (verbose)
 		Wscrprintf("sw %lf, cr %lf, delta %lf, rfl %lf, rfp %lf, rp %lf, lp %lf\n",
 		    sw,cr,delta,rfl,rfp,rp,lp);
-	if ((cr<rfp)||(cr-delta>rfp))
+/* GAM 27x15 */	if (((cr<rfp)||(cr-delta>rfp))&&!readcfflg)
 	{
 		Werrprintf("Please place cursors either side of reference and try again\n");
 		return(ERROR);
@@ -968,18 +985,17 @@ static int i_fiddle(int argc, char *argv[])
 	}
 
 	npi= (int)np;
-
 	np0 = (int)fn;
 	fn0 = np0;    /* ! */
-	if (hilbert&&((int)np>fn0/2))
+/* GAM 27x15 */	if (hilbert&&((int)np>fn0/2))
 	{
 		if (verbose) Wscrprintf("np = %f ",np);
 		if (verbose) Wscrprintf("fn = %f\n",fn);
-		Werrprintf("Data should be zerofilled so that fn>=2*np for hilbert transform");
-		npi=(int) fn0/2;
+/* GAM 27x15 */		Werrprintf("Data should be zerofilled so that fn>=2*np for hilbert transform");
 	}
-	if (hilbert) np0w=np0/2; 
-	else np0w=np0;
+	np0w=np0;
+/* GAM 27x15 */	if (hilbert) npi=fn0/2; 
+	if (hilbert) np0w=fn0/2; 
 
 	/* calculate rest of params */
 	hzpp=sw/np0*2;
@@ -1746,7 +1762,8 @@ void readincf()
 	{
 		if (feof(readcffile)) Wscrprintf("End of file detected");
 	}
-	for (i=0;i<np0w;i++) data2[i]=(float)(intbuf[i]);
+/* GAM 27x15 */	for (i=0;i<np0w;i++) data2[i]=(float)(int)htonl((intbuf[i]));
+/* GAM 27x15 */	for (i=np0w;i<np0;i++) data2[i]=0.0;
 }
 
 int setupreadcf()
