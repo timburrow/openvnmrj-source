@@ -1,10 +1,18 @@
+# NOTICE
+
+Do not fork this repository; it contains old code.  
+
+_This repository will be deleted_  
+
+Use the repository at [OpenVnmrJ] (https://github.com/OpenVnmrJ/OpenVnmrJ.git)  
+
 #OpenVnmrJ
 
 
-README.ovj
-v0.3
-11 September 2015
-Dan Iverson & John Ryan
+README.ovj  
+v0.3  
+11 September 2015  
+Dan Iverson & John Ryan  
 
 ## BUILD REQUIREMENTS
 
